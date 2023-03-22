@@ -1,7 +1,6 @@
 from django.urls import path
 
-from .views import UserViewSet, BotViewSet, MessageViewSet, SubscriptionViewSet, KeywordViewSet, ChannelsViewSet, KeywordCategoriesViewSet, SpamWordsViewSet, MessageIdViewSet
-
+from .views import UserViewSet, BotViewSet, SubscriptionViewSet, KeywordViewSet, ChannelsViewSet, KeywordCategoriesViewSet, SpamWordsViewSet, ActiveSubscriptionListView, SubscriptionExpirationListView
 app_name = "user"
 
 urlpatterns = [
@@ -27,38 +26,6 @@ urlpatterns = [
     )),
     path('bot/<int:pk>/', BotViewSet.as_view(
         {
-            'get':'retrieve',
-            'put': 'update',
-            'patch': 'partial_update',
-            'delete': 'destroy'
-        }
-    )),
-    path('message/', MessageViewSet.as_view(
-        {
-            'get': 'list',
-            'post': 'create'
-        }
-    )),
-    path('message/<int:pk>/', MessageViewSet.as_view(
-        {
-            'get':'retrieve',
-            'put': 'update',
-
-        }
-    )),
-
-    path('messageid/', MessageIdViewSet.as_view(
-        
-        {
-            
-            'get': 'list',
-            'post': 'create'    
-        }
-    )),
-    path('messageid/<int:pk>/', MessageIdViewSet.as_view(
-        
-        {
-            
             'get':'retrieve',
             'put': 'update',
             'patch': 'partial_update',
@@ -152,6 +119,11 @@ urlpatterns = [
         }
 
     )),
+
+    path('activesubscription/', ActiveSubscriptionListView.as_view()),
+    path('subscriptionexpiration/', SubscriptionExpirationListView.as_view()),
+
+
 
 ]
 

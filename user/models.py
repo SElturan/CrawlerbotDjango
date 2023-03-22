@@ -1,21 +1,18 @@
 from django.db import models
-from datetime import timedelta
-from django.utils import timezone
+
 
 
 class User(models.Model):
-    first_name = models.CharField(max_length=255)
-    user_name = models.CharField(max_length=255, null=True, blank=True)
-    user_id = models.BigIntegerField(unique=True)
-    is_admin = models.BooleanField(default=False)
-    is_bot = models.BooleanField(default=False)
-    is_sub = models.BooleanField(default=False)
-    date_joined = models.DateTimeField(auto_now_add=True)
+    first_name = models.CharField(max_length=255,verbose_name='Никнейм')
+    user_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='Юзернейм')
+    user_id = models.BigIntegerField(unique=True, verbose_name='ID пользователя')
+    is_admin = models.BooleanField(default=False, verbose_name='Админ')
+    date_joined = models.DateTimeField(auto_now_add=True, verbose_name='Дата регистрации')
 
 
     def __str__(self):
         if self.user_name:
-            return f'{self.first_name}'
+            return f'{self.first_name}-{self.user_name}'
         else:
             return f'{self.user_id}'
 
@@ -25,7 +22,7 @@ class User(models.Model):
 
 
 class KeywordCategories(models.Model):
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, unique=True, verbose_name='Наименование категории')
 
     def __str__(self):
         return self.name
@@ -35,8 +32,8 @@ class KeywordCategories(models.Model):
         verbose_name_plural = 'Категории ключевых слов'
 
 class Keyword(models.Model):
-    categories = models.ForeignKey(KeywordCategories, on_delete=models.CASCADE, related_name='keywords')
-    keyword = models.CharField(max_length=255, unique=True)
+    categories = models.ForeignKey(KeywordCategories, on_delete=models.CASCADE, related_name='keywords', verbose_name='Категория ключевых слов')
+    keyword = models.CharField(max_length=255, unique=True, verbose_name='Ключевые слова')
 
     def __str__(self):
         return self.keyword
@@ -46,15 +43,24 @@ class Keyword(models.Model):
         verbose_name_plural = 'Ключевые слова'
 
 
-class SpamWords(models.Model):
-    word = models.CharField(max_length=255, unique=True)
+
+
+class Subscription(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions', verbose_name='Пользователь')
+    keyword = models.ForeignKey(KeywordCategories, on_delete=models.CASCADE, related_name='subscriptions', verbose_name='Выбранная категория')
+    start_date = models.DateTimeField(auto_now_add= True, verbose_name='Дата подписки')
+    end_date = models.DateTimeField(null=True, blank=True, verbose_name='Дата окончания подписки')
+    duration_days = models.IntegerField(default=3)
+
 
     def __str__(self):
-        return self.word
+        return f'({self.start_date.strftime("%d.%m.%Y")}-{self.end_date.strftime("%d.%m.%Y")})'
+
 
     class Meta:
-        verbose_name = 'Спам слово'
-        verbose_name_plural = 'Спам слова'
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        unique_together = ('user', 'keyword')
 
 class Bot(models.Model):
     name = models.CharField(max_length=255)
@@ -67,58 +73,6 @@ class Bot(models.Model):
         verbose_name = 'Бот'
         verbose_name_plural = 'Боты'
         ordering = ['name']
-    
-
-
-class MessageId(models.Model):
-    message_id = models.CharField(max_length=255, unique=True)
-
-
-    def __str__(self):
-        return str(self.message_id)
-
-    class Meta:
-        verbose_name = 'ID сообщения'
-        verbose_name_plural = 'ID сообщений'
-        ordering = ['message_id']
-
-class Message(models.Model):
-    message_id = models.ForeignKey(MessageId, on_delete=models.CASCADE, related_name='messages')
-    text = models.TextField()
-    date = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.text
-
-    class Meta:
-        verbose_name = 'Сообщение'
-        verbose_name_plural = 'Сообщения'
-
-
-
-class Subscription(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='users')
-    keyword = models.ForeignKey(KeywordCategories, on_delete=models.CASCADE, related_name='keyword')
-    date = models.DateTimeField(auto_now_add=True)
-    end_date = models.DateTimeField(null=True, blank=True)
-    duration_days = models.PositiveSmallIntegerField(default=3)  # поле для хранения длительности подписки
-
-    @property
-    def end_date(self):
-        return self.date + timezone.timedelta(days=self.duration_days)  # вычисление даты окончания подписки
-    
-    @end_date.getter
-    def end_date(self):
-        return self.date + timezone.timedelta(days=self.duration_days)
-
-    def __str__(self):
-        return f'{self.user} - {self.keyword}'
-
-    class Meta:
-        verbose_name = 'Подписка'
-        verbose_name_plural = 'Подписки'
-        unique_together = ('user', 'keyword')
-
 
 class Channels(models.Model):
     name = models.CharField(max_length=255)
@@ -134,3 +88,15 @@ class Channels(models.Model):
         verbose_name_plural = 'Каналы'
 
 
+class SpamWords(models.Model):
+    word = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.word
+
+    class Meta:
+        verbose_name = 'Спам слово'
+        verbose_name_plural = 'Спам слова'
+
+
+    
