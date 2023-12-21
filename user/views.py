@@ -19,7 +19,6 @@ class UserViewSet(viewsets.ModelViewSet):
     
     
 
-
 class SubscriptionViewSet(viewsets.ModelViewSet):
     queryset = Subscription.objects.all()
     serializer_class = SubscriptionSerializer
@@ -27,10 +26,13 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     filterset_fields = ('keyword__name','user__user_id',)
 
     def partial_update(self, request, *args, **kwargs):
-        
+            
         instance = self.get_object()
         duration_days = request.data.get('duration_days')
         if duration_days:
+            # проверяем, истекла ли дата окончания подписки
+            if instance.end_date < timezone.now():
+                instance.end_date = timezone.now()
             instance.duration_days = duration_days
         end_date = instance.end_date + timezone.timedelta(days=instance.duration_days)
         instance.end_date = end_date
@@ -61,6 +63,8 @@ class ActiveSubscriptionListView(ListAPIView):
         return Subscription.objects.filter(
             end_date__gte=timezone.now(),
         ).select_related('user', 'keyword')
+    
+    
     
 
 class SubscriptionExpirationListView(ListAPIView):

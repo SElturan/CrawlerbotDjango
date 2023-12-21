@@ -1,0 +1,60 @@
+
+ 
+
+version: '3'
+
+services:
+  db:
+    image: postgres:14.0-alpine
+    restart: always
+    volumes:
+      - ./db_data:/var/lib/postgresql/data:rw
+
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: userbotdb
+    ports:
+      - "5432"
+  web:
+    build: . 
+    command: >
+      bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - project:/usr/src/app/
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+  redis:
+    image: redis:6.2.5-alpine
+    restart: always
+  celery:
+    build: .
+    command: >
+      bash -c "celery -A userbot worker -l info"
+    volumes:
+      - project:/usr/src/app/
+    depends_on:
+      - redis
+      - db
+      - web
+  celery-beat:
+    build: .
+    command: >
+      bash -c "celery -A userbot beat -l info"
+    volumes:
+      - project:/usr/src/app/
+    depends_on:
+      - db
+      - redis
+      - web
+
+
+volumes:
+  db_data:
+  project:   
+
+
